@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Binance Alpha 代币现货 / 合约上线情况</title>
+  <style>
+    :root{
+      --bg:#f9fafb;--card:#ffffff;--text:#1f2937;--sub:#6b7280;
+      --green:#16a34a;--red:#dc2626;--border:#e5e7eb;--primary:#2563eb;
+    }
+    @media(prefers-color-scheme:dark){
+      :root{--bg:#1e293b;--card:#1f2937;--text:#f3f4f6;--sub:#94a3b8;--border:#334155;}
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif;}
+    body{background:var(--bg);color:var(--text);line-height:1.5;padding:20px;}
+    h1{text-align:center;margin-bottom:20px;color:var(--primary);}
+    section{margin-bottom:40px;}
+    table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);}
+    th,td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left;}
+    th{background:var(--bg);user-select:none;}
+    .badge{font-size:12px;padding:2px 6px;border-radius:4px;color:#fff;}
+    .badge.spot{background:var(--green);}
+    .badge.perp{background:var(--primary);}
+    .loading{text-align:center;color:var(--sub);margin-top:10px;}
+    .toolbar{margin:6px 0 12px;display:flex;align-items:center;gap:6px;font-size:14px;color:var(--sub);}
+    input[type="checkbox"]{transform:scale(1.1);cursor:pointer;}
+    .sortable{cursor:pointer;}
+  </style>
+</head>
+<body>
+  <h1>Binance Alpha 代币上线一览</h1>
+
+  <section>
+    <h2>✅ 已上线现货 (Spot)</h2>
+    <div id="spotTable"></div>
+  </section>
+
+  <section>
+    <h2>📈 已上线合约 (Perpetual Futures)</h2>
+    <div class="toolbar">
+      <label><input type="checkbox" id="hideDup" /> 隐藏已上线现货的代币</label>
+    </div>
+    <div id="perpTable"></div>
+  </section>
+
+  <script>
+    (async () => {
+      const spotDiv   = document.getElementById('spotTable');
+      const perpDiv   = document.getElementById('perpTable');
+      const hideDupCB = document.getElementById('hideDup');
+      const loading   = '<p class="loading">加载中…</p>';
+      spotDiv.innerHTML = perpDiv.innerHTML = loading;
+
+      /* ---------- 全局排序状态 ---------- */
+      let sortAsc = false;   // 默认按流通市值降序
+      let spotList = [], perpList = [], spotSet = new Set();
+
+      /* ---------- 工具 ---------- */
+      const color = v => (+v) >= 0 ? 'var(--green)' : 'var(--red)';
+      const fmt   = n => (+n).toLocaleString(undefined,{maximumFractionDigits:0});
+
+      /* ---------- 获取数据 ---------- */
+      try {
+        const alphaURL = 'https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list';
+        const futuresURL = 'https://fapi.binance.com/fapi/v1/exchangeInfo';
+
+        const [alphaRes, futRes] = await Promise.all([fetch(alphaURL), fetch(futuresURL)]);
+        const tokens = (await alphaRes.json()).data || [];
+        const futSyms = (await futRes.json()).symbols.map(s=>s.symbol);  // e.g. TREEUSDT
+
+        tokens.forEach(t=>{
+          const sym = t.symbol.toUpperCase();
+          if (t.listingCex) spotList.push(t);
+          if (futSyms.includes(sym + 'USDT')) perpList.push(t);
+        });
+        spotSet = new Set(spotList.map(t=>t.symbol.toUpperCase()));
+
+        renderSpot();
+        renderPerp();
+
+        hideDupCB.addEventListener('change', renderPerp);
+      } catch (e){
+        spotDiv.innerHTML = perpDiv.innerHTML = '<p class="loading" style="color:var(--red)">加载失败，请稍后重试！</p>';
+        console.error(e);
+      }
+
+      /* ---------- 渲染函数 ---------- */
+      function rowTpl(arr, tag, showMcap){
+        return arr.map(a=>`
+          <tr>
+            <td>${a.name}</td>
+            <td>${a.symbol}</td>
+            <td style="color:${color(a.percentChange24h)}">${(+a.percentChange24h).toFixed(2)}%</td>
+            <td>${(+a.price).toFixed(6)}</td>
+            ${showMcap ? `<td>${fmt(a.marketCap)}</td>`:''}
+            <td><span class="badge ${tag==='现货已上'?'spot':'perp'}">${tag}</span></td>
+          </tr>`).join('');
+      }
+
+      function renderSpot(){
+        spotDiv.innerHTML = spotList.length ? `
+          <table>
+            <thead>
+              <tr><th>名称</th><th>符号</th><th>24h 涨跌%</th><th>价格 (USD)</th><th></th></tr>
+            </thead>
+            <tbody>${rowTpl(spotList,'现货已上',false)}</tbody>
+          </table>` : loading;
+      }
+
+      function renderPerp(){
+        let arr = perpList.slice();
+        if (hideDupCB.checked) arr = arr.filter(a=>!spotSet.has(a.symbol.toUpperCase()));
+        arr.sort((a,b)=> sortAsc ? (+a.marketCap - +b.marketCap) : (+b.marketCap - +a.marketCap));
+
+        perpDiv.innerHTML = arr.length ? `
+          <table>
+            <thead>
+              <tr>
+                <th>名称</th><th>符号</th><th>24h 涨跌%</th><th>价格 (USD)</th>
+                <th id="mcapHeader" class="sortable">流通市值 (USD) ${sortAsc?'▲':'▼'}</th><th></th>
+              </tr>
+            </thead>
+            <tbody>${rowTpl(arr,'合约已上',true)}</tbody>
+          </table>` : '<p class="loading">(空)</p>';
+
+        /* 点击列头切换排序 */
+        const hdr = document.getElementById('mcapHeader');
+        if (hdr) hdr.onclick = ()=>{ sortAsc = !sortAsc; renderPerp(); };
+      }
+    })();
+  </script>
+</body>
+</html>
