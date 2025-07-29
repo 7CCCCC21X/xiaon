@@ -21,7 +21,7 @@
     th{background:var(--bg);user-select:none;}
     img.ico{width:24px;height:24px;border-radius:50%;vertical-align:middle;}
     .badge{font-size:12px;padding:2px 6px;border-radius:4px;color:#fff;}
-    .badge.spot{background:var(--green);}  .badge.perp{background:var(--primary);}
+    .badge.spot{background:var(--green);} .badge.perp{background:var(--primary);}
     .loading{text-align:center;color:var(--sub);margin-top:10px;}
     .toolbar{margin:6px 0 12px;display:flex;align-items:center;gap:6px;font-size:14px;color:var(--sub);}
     input[type="checkbox"]{transform:scale(1.1);cursor:pointer;}
@@ -86,8 +86,7 @@
   const rowTpl = (arr, tag, showMcap) => arr.map(a => `
     <tr>
       <td><img class="ico" loading="lazy" referrerpolicy="no-referrer"
-           src="${a.iconUrl}" alt=""
-           onerror="this.style.display='none'"></td>
+           src="${a.iconUrl}" alt="" onerror="this.style.display='none'"></td>
       <td>${a.name}</td>
       <td>${a.symbol}</td>
       <td style="color:${color(a.percentChange24h)}">${(+a.percentChange24h).toFixed(2)}%</td>
