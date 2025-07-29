@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="referrer" content="no-referrer" />  <!-- 关键：去掉 Referer -->
   <title>Binance Alpha 代币现货 / 合约上线情况</title>
   <style>
     :root{
@@ -53,21 +52,19 @@
   const loading   = '<p class="loading">加载中…</p>';
   spotDiv.innerHTML = perpDiv.innerHTML = loading;
 
-  /* ---------- 全局状态 ---------- */
-  let sortAsc = false;              // 流通市值排序方向
+  let sortAsc = false;
   let spotList = [], perpList = [];
   const color = v => (+v) >= 0 ? 'var(--green)' : 'var(--red)';
   const fmt   = n => (+n).toLocaleString(undefined,{maximumFractionDigits:0});
 
   try {
-    /* ---------- 并发拉取数据 ---------- */
     const [alphaRes, futRes] = await Promise.all([
       fetch('https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list'),
       fetch('https://fapi.binance.com/fapi/v1/exchangeInfo')
     ]);
 
     const tokens  = (await alphaRes.json()).data || [];
-    const futSyms = (await futRes.json()).symbols.map(s => s.symbol);   // e.g. TREEUSDT
+    const futSyms = (await futRes.json()).symbols.map(s => s.symbol);
 
     tokens.forEach(t => {
       const s = t.symbol.toUpperCase();
@@ -78,19 +75,19 @@
     const spotSet = new Set(spotList.map(t=>t.symbol.toUpperCase()));
     renderSpot();
     renderPerp();
-
     hideDupCB.onchange = renderPerp;
+
   } catch (err){
-    spotDiv.innerHTML = perpDiv.innerHTML = '<p class="loading" style="color:var(--red)">加载失败，请稍后重试！</p>';
+    spotDiv.innerHTML = perpDiv.innerHTML =
+      '<p class="loading" style="color:var(--red)">加载失败，请稍后重试！</p>';
     console.error(err);
   }
 
-  /* ---------- 共用行模板 ---------- */
   const rowTpl = (arr, tag, showMcap) => arr.map(a => `
     <tr>
       <td><img class="ico" loading="lazy" referrerpolicy="no-referrer"
-           src="${a.iconUrl}"
-           alt="" onerror="this.style.display='none'"></td>
+           src="${a.iconUrl}" alt=""
+           onerror="this.style.display='none'"></td>
       <td>${a.name}</td>
       <td>${a.symbol}</td>
       <td style="color:${color(a.percentChange24h)}">${(+a.percentChange24h).toFixed(2)}%</td>
