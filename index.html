@@ -21,7 +21,8 @@
     th{background:var(--bg);user-select:none;}
     img.ico{width:24px;height:24px;border-radius:50%;vertical-align:middle;}
     .badge{font-size:12px;padding:2px 6px;border-radius:4px;color:#fff;}
-    .badge.spot{background:var(--green);} .badge.perp{background:var(--primary);}
+    .badge.spot{background:var(--green);}
+    .badge.perp{background:var(--primary);}
     .loading{text-align:center;color:var(--sub);margin-top:10px;}
     .toolbar{margin:6px 0 12px;display:flex;align-items:center;gap:6px;font-size:14px;color:var(--sub);}
     input[type="checkbox"]{transform:scale(1.1);cursor:pointer;}
@@ -37,93 +38,95 @@
   </section>
 
   <section>
-    <h2>📈 已上线合约 (Perpetual Futures)</h2>
+    <h2>📈 已上线合约 (Perpetual Futures)</h2>
     <div class="toolbar">
-      <label><input type="checkbox" id="hideDup"> 隐藏已上线现货的代币</label>
+      <label><input type="checkbox" id="hideDup" /> 隐藏已上线现货的代币</label>
     </div>
     <div id="perpTable"></div>
   </section>
 
-<script>
-(async () => {
-  const spotDiv   = document.getElementById('spotTable');
-  const perpDiv   = document.getElementById('perpTable');
-  const hideDupCB = document.getElementById('hideDup');
-  const loading   = '<p class="loading">加载中…</p>';
-  spotDiv.innerHTML = perpDiv.innerHTML = loading;
+  <script>
+    (async () => {
+      const spotDiv   = document.getElementById('spotTable');
+      const perpDiv   = document.getElementById('perpTable');
+      const hideDupCB = document.getElementById('hideDup');
+      const loading   = '<p class="loading">加载中…</p>';
+      spotDiv.innerHTML = perpDiv.innerHTML = loading;
 
-  let sortAsc = false;
-  let spotList = [], perpList = [];
-  const color = v => (+v) >= 0 ? 'var(--green)' : 'var(--red)';
-  const fmt   = n => (+n).toLocaleString(undefined,{maximumFractionDigits:0});
+      /* ---------- 全局排序状态 ---------- */
+      let sortAsc = false;
+      let spotList = [], perpList = [], spotSet = new Set();
 
-  try {
-    const [alphaRes, futRes] = await Promise.all([
-      fetch('https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list'),
-      fetch('https://fapi.binance.com/fapi/v1/exchangeInfo')
-    ]);
+      const color = v => (+v) >= 0 ? 'var(--green)' : 'var(--red)';
+      const fmt   = n => (+n).toLocaleString(undefined,{maximumFractionDigits:0});
 
-    const tokens  = (await alphaRes.json()).data || [];
-    const futSyms = (await futRes.json()).symbols.map(s => s.symbol);
+      /* ---------- 获取数据 ---------- */
+      try {
+        const alphaURL   = 'https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list';
+        const futuresURL = 'https://fapi.binance.com/fapi/v1/exchangeInfo';
+        const [alphaRes, futRes] = await Promise.all([fetch(alphaURL), fetch(futuresURL)]);
 
-    tokens.forEach(t => {
-      const s = t.symbol.toUpperCase();
-      if (t.listingCex) spotList.push(t);
-      if (futSyms.includes(s + 'USDT')) perpList.push(t);
-    });
+        const tokens  = (await alphaRes.json()).data || [];
+        const futSyms = (await futRes.json()).symbols.map(s => s.symbol);  // e.g. TREEUSDT
 
-    const spotSet = new Set(spotList.map(t=>t.symbol.toUpperCase()));
-    renderSpot();
-    renderPerp();
-    hideDupCB.onchange = renderPerp;
+        tokens.forEach(t => {
+          const sym = t.symbol.toUpperCase();
+          if (t.listingCex) spotList.push(t);
+          if (futSyms.includes(sym + 'USDT')) perpList.push(t);
+        });
+        spotSet = new Set(spotList.map(t => t.symbol.toUpperCase()));
 
-  } catch (err){
-    spotDiv.innerHTML = perpDiv.innerHTML =
-      '<p class="loading" style="color:var(--red)">加载失败，请稍后重试！</p>';
-    console.error(err);
-  }
+        renderSpot();
+        renderPerp();
+        hideDupCB.addEventListener('change', renderPerp);
 
-  const rowTpl = (arr, tag, showMcap) => arr.map(a => `
-    <tr>
-      <td><img class="ico" loading="lazy" referrerpolicy="no-referrer"
-           src="${a.iconUrl}" alt="" onerror="this.style.display='none'"></td>
-      <td>${a.name}</td>
-      <td>${a.symbol}</td>
-      <td style="color:${color(a.percentChange24h)}">${(+a.percentChange24h).toFixed(2)}%</td>
-      <td>${(+a.price).toFixed(6)}</td>
-      ${showMcap ? `<td>${fmt(a.marketCap)}</td>` : ''}
-      <td><span class="badge ${tag==='现货已上'?'spot':'perp'}">${tag}</span></td>
-    </tr>`).join('');
+      } catch (e){
+        spotDiv.innerHTML = perpDiv.innerHTML = '<p class="loading" style="color:var(--red)">加载失败，请稍后重试！</p>';
+        console.error(e);
+      }
 
-  function renderSpot(){
-    spotDiv.innerHTML = spotList.length ? `
-      <table>
-        <thead><tr>
-          <th>图标</th><th>名称</th><th>符号</th><th>24h 涨跌%</th><th>价格 (USD)</th><th></th>
-        </tr></thead>
-        <tbody>${rowTpl(spotList,'现货已上',false)}</tbody>
-      </table>` : loading;
-  }
+      /* ---------- 渲染函数 ---------- */
+      function rowTpl(arr, tag, showMcap){
+        return arr.map(a => `
+          <tr>
+            <td><img src="${a.iconUrl}" alt="" class="ico" onerror="this.style.display='none'"></td>
+            <td>${a.name}</td>
+            <td>${a.symbol}</td>
+            <td style="color:${color(a.percentChange24h)}">${(+a.percentChange24h).toFixed(2)}%</td>
+            <td>${(+a.price).toFixed(6)}</td>
+            ${showMcap ? `<td>${fmt(a.marketCap)}</td>` : ''}
+            <td><span class="badge ${tag==='现货已上'?'spot':'perp'}">${tag}</span></td>
+          </tr>`).join('');
+      }
 
-  function renderPerp(){
-    let arr = hideDupCB.checked
-      ? perpList.filter(t => !spotList.some(s => s.symbol===t.symbol))
-      : perpList.slice();
+      function renderSpot(){
+        spotDiv.innerHTML = spotList.length ? `
+          <table>
+            <thead><tr>
+              <th>图标</th><th>名称</th><th>符号</th><th>24h 涨跌%</th><th>价格 (USD)</th><th></th>
+            </tr></thead>
+            <tbody>${rowTpl(spotList,'现货已上',false)}</tbody>
+          </table>` : loading;
+      }
 
-    arr.sort((a,b)=> sortAsc ? (+a.marketCap - +b.marketCap) : (+b.marketCap - +a.marketCap));
+      function renderPerp(){
+        let arr = perpList.slice();
+        if (hideDupCB.checked) arr = arr.filter(a => !spotSet.has(a.symbol.toUpperCase()));
+        arr.sort((a,b) => sortAsc ? (+a.marketCap - +b.marketCap) : (+b.marketCap - +a.marketCap));
 
-    perpDiv.innerHTML = arr.length ? `
-      <table>
-        <thead><tr>
-          <th>图标</th><th>名称</th><th>符号</th><th>24h 涨跌%</th><th>价格 (USD)</th>
-          <th id="mcapHeader" class="sortable">流通市值 (USD) ${sortAsc?'▲':'▼'}</th><th></th>
-        </tr></thead>
-        <tbody>${rowTpl(arr,'合约已上',true)}</tbody>
-      </table>` : '<p class="loading">(空)</p>';
+        perpDiv.innerHTML = arr.length ? `
+          <table>
+            <thead><tr>
+              <th>图标</th><th>名称</th><th>符号</th><th>24h 涨跌%</th><th>价格 (USD)</th>
+              <th id="mcapHeader" class="sortable">流通市值 (USD) ${sortAsc?'▲':'▼'}</th><th></th>
+            </tr></thead>
+            <tbody>${rowTpl(arr,'合约已上',true)}</tbody>
+          </table>` : '<p class="loading">(空)</p>';
 
-    document.getElementById('mcapHeader').onclick = ()=>{ sortAsc=!sortAsc; renderPerp(); };
-  }
-})();
-</script>
+        const hdr = document.getElementById('mcapHeader');
+        if (hdr) hdr.onclick = () => { sortAsc = !sortAsc; renderPerp(); };
+      }
+    })();
+  </script>
 </body>
 </html>
