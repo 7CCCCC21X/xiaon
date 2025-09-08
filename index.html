@@ -2,130 +2,452 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Binance Alpha 代币现货 / 合约上线情况</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Binance Alpha 代币合约上线一览</title>
   <style>
     :root{
-      --bg:#f9fafb;--card:#ffffff;--text:#1f2937;--sub:#6b7280;
+      --bg:#f9fafb;--card:#ffffff;--text:#111827;--sub:#6b7280;
       --green:#16a34a;--red:#dc2626;--border:#e5e7eb;--primary:#2563eb;
+      --muted:#f3f4f6;--shadow:0 1px 2px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.1);
     }
     @media(prefers-color-scheme:dark){
-      :root{--bg:#1e293b;--card:#1f2937;--text:#f3f4f6;--sub:#94a3b8;--border:#334155;}
+      :root{
+        --bg:#0b1220;--card:#0f172a;--text:#e5e7eb;--sub:#94a3b8;
+        --border:#1e293b;--muted:#101827;--shadow:none;
+      }
     }
-    *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif;}
-    body{background:var(--bg);color:var(--text);line-height:1.5;padding:20px;}
-    h1{text-align:center;margin-bottom:20px;color:var(--primary);}
-    section{margin-bottom:40px;}
-    table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);}
-    th,td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left;}
-    th{background:var(--bg);user-select:none;}
-    img.ico{width:24px;height:24px;border-radius:50%;vertical-align:middle;}
-    .badge{font-size:12px;padding:2px 6px;border-radius:4px;color:#fff;}
-    .badge.spot{background:var(--green);}
-    .badge.perp{background:var(--primary);}
-    .loading{text-align:center;color:var(--sub);margin-top:10px;}
-    .toolbar{margin:6px 0 12px;display:flex;align-items:center;gap:6px;font-size:14px;color:var(--sub);}
-    input[type="checkbox"]{transform:scale(1.1);cursor:pointer;}
-    .sortable{cursor:pointer;}
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{background:var(--bg);color:var(--text);line-height:1.55;padding:20px}
+    .container{max-width:1200px;margin:0 auto}
+    h1{margin:0 0 14px;text-align:center;color:var(--primary);font-weight:700}
+    .topbar{
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;
+      margin:12px 0 24px;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)
+    }
+    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .input{
+      height:36px;min-width:220px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);
+      outline:none
+    }
+    .input::placeholder{color:var(--sub)}
+    .btn{
+      height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer
+    }
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .btn:hover{border-color:var(--primary)}
+    label{display:inline-flex;gap:6px;align-items:center;font-size:14px;color:var(--sub);user-select:none}
+    .status{font-size:13px;color:var(--sub);display:flex;gap:14px;align-items:center}
+    .status a{color:var(--primary);text-decoration:none}
+    .status a:hover{text-decoration:underline}
+    section{margin-bottom:34px}
+    h2{margin:0 0 8px;font-size:18px}
+    .card{
+      background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)
+    }
+    .table-wrap{overflow:auto}
+    table{width:100%;border-collapse:collapse;table-layout:fixed}
+    th,td{
+      padding:10px 8px;border-bottom:1px solid var(--border);white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;vertical-align:middle
+    }
+    th{
+      background:var(--muted);position:sticky;top:0;z-index:1;font-weight:600;font-size:14px;
+      user-select:none
+    }
+    td{font-size:14px}
+    .num{text-align:right}
+    .sortable{cursor:pointer}
+    .sortable .arrow{opacity:.6;margin-left:6px}
+    .ico{width:22px;height:22px;border-radius:50%;vertical-align:middle}
+    .badge{font-size:12px;padding:2px 6px;border-radius:6px;color:#fff}
+    .perp{background:var(--primary)}
+    .chg-pos{color:var(--green);font-variant-numeric:tabular-nums}
+    .chg-neg{color:var(--red);font-variant-numeric:tabular-nums}
+    .loading{padding:16px;text-align:center;color:var(--sub)}
+    .error{padding:16px;text-align:center;color:#fff;background:#ef4444}
+    .muted{color:var(--sub)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .hint{padding:10px 12px;font-size:13px;color:var(--sub);border-bottom:1px solid var(--border);background:var(--muted)}
   </style>
 </head>
 <body>
-  <h1>Binance Alpha 代币上线一览</h1>
+  <div class="container">
+    <h1>Binance Alpha 代币合约上线一览</h1>
 
-  <section>
-    <h2>✅ 已上线现货 (Spot)</h2>
-    <div id="spotTable"></div>
-  </section>
-
-  <section>
-    <h2>📈 已上线合约 (Perpetual Futures)</h2>
-    <div class="toolbar">
-      <label><input type="checkbox" id="hideDup" /> 隐藏已上线现货的代币</label>
+    <div class="topbar">
+      <div class="controls">
+        <input id="search" class="input" type="search" placeholder="搜索名称 / 符号…" />
+        <label><input type="checkbox" id="hideDup" /> 隐藏“已上线现货”的代币</label>
+        <label><input type="checkbox" id="autoRefresh" /> 自动刷新（每 30 秒）</label>
+        <button id="refreshBtn" class="btn">立即刷新</button>
+      </div>
+      <div class="status">
+        <span id="lastUpdated" class="muted">最后更新时间：—</span>
+        <span>作者：<a href="https://x.com/0xXIAOc" target="_blank" rel="noopener noreferrer">@0xXIAOc</a></span>
+      </div>
     </div>
-    <div id="perpTable"></div>
-  </section>
+
+    <section>
+      <h2>📈 已上线合约 (Perpetual Futures)</h2>
+      <div id="perpBox" class="card">
+        <div id="perpHint" class="hint">合约数：— ｜已隐藏：— ｜显示：—</div>
+        <div id="perpTable" class="table-wrap" aria-live="polite"></div>
+      </div>
+    </section>
+  </div>
 
   <script>
-    (async () => {
-      const spotDiv   = document.getElementById('spotTable');
+    (function(){
+      // ---------- DOM ----------
       const perpDiv   = document.getElementById('perpTable');
+      const perpHint  = document.getElementById('perpHint');
       const hideDupCB = document.getElementById('hideDup');
-      const loading   = '<p class="loading">加载中…</p>';
-      spotDiv.innerHTML = perpDiv.innerHTML = loading;
+      const searchInp = document.getElementById('search');
+      const refreshBtn= document.getElementById('refreshBtn');
+      const autoRefCB = document.getElementById('autoRefresh');
+      const lastUpdEl = document.getElementById('lastUpdated');
 
-      /* ---------- 全局排序状态 ---------- */
-      let sortAsc = false;
-      let spotList = [], perpList = [], spotSet = new Set();
+      // ---------- Constants ----------
+      const PREF_KEY      = 'alpha.perps.prefs.v5';
+      const ALPHA_LIST_URL= 'https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list';
+      const FUTURES_URL   = 'https://fapi.binance.com/fapi/v1/exchangeInfo'; // USDⓈ-M
+      const REFRESH_MS    = 30_000;
 
-      const color = v => (+v) >= 0 ? 'var(--green)' : 'var(--red)';
-      const fmt   = n => (+n).toLocaleString(undefined,{maximumFractionDigits:0});
+      // ---------- State ----------
+      const state = {
+        spotList: [],
+        perpList: [],
+        spotSet: new Set(),
+        loading: false,
+        timer: null,
+        filters: { q: '', hideDup: false },
+        // 可按：symbol|change|price|vol24h|marketCap|fdv|alphaTime 排序
+        sort: { key: 'marketCap', dir: 'desc' },
+        autoRefresh: false
+      };
 
-      /* ---------- 获取数据 ---------- */
-      try {
-        const alphaURL   = 'https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list';
-        const futuresURL = 'https://fapi.binance.com/fapi/v1/exchangeInfo';
-        const [alphaRes, futRes] = await Promise.all([fetch(alphaURL), fetch(futuresURL)]);
+      // ---------- Utils ----------
+      const escapeHtml = (s='') => String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
-        const tokens  = (await alphaRes.json()).data || [];
-        const futSyms = (await futRes.json()).symbols.map(s => s.symbol);  // e.g. TREEUSDT
+      const toNum = v => Number.isFinite(Number(v)) ? Number(v) : 0;
+      const isTrue = v => v === true || v === 1 || (typeof v === 'string' && ['1','true','yes','y'].includes(v.toLowerCase()));
 
-        tokens.forEach(t => {
-          const sym = t.symbol.toUpperCase();
-          if (t.listingCex) spotList.push(t);
-          if (futSyms.includes(sym + 'USDT')) perpList.push(t);
-        });
-        spotSet = new Set(spotList.map(t => t.symbol.toUpperCase()));
+      const fmtPercent = n => `${toNum(n) >= 0 ? '+' : ''}${toNum(n).toFixed(2)}%`;
+      const fmtPrice = n => {
+        const v = toNum(n), a = Math.abs(v);
+        let max = 2;
+        if (a === 0) max = 2;
+        else if (a < 0.000001) max = 8;
+        else if (a < 0.0001) max = 7;
+        else if (a < 0.001) max = 6;
+        else if (a < 0.01) max = 5;
+        else if (a < 1) max = 4;
+        else max = 2;
+        return v.toLocaleString(undefined, { maximumFractionDigits: max });
+      };
+      // 中文紧凑单位用于 USD 数字（万/亿）
+      const fmtUSD = n => toNum(n)
+        ? new Intl.NumberFormat('zh-CN',{notation:'compact',maximumFractionDigits:2}).format(toNum(n))
+        : '—';
 
-        renderSpot();
-        renderPerp();
-        hideDupCB.addEventListener('change', renderPerp);
+      const colorClass = v => toNum(v) >= 0 ? 'chg-pos' : 'chg-neg';
 
-      } catch (e){
-        spotDiv.innerHTML = perpDiv.innerHTML = '<p class="loading" style="color:var(--red)">加载失败，请稍后重试！</p>';
-        console.error(e);
+      const DATE_FMT = new Intl.DateTimeFormat('zh-CN', {
+        year:'numeric', month:'numeric', day:'numeric',
+        hour:'2-digit', minute:'2-digit', second:'2-digit',
+        hour12:false
+      });
+      const fmtDate = (ms) => ms ? DATE_FMT.format(new Date(ms)).replace(/\u200E/g, '') : '—';
+      const nowStr = () => DATE_FMT.format(new Date());
+      const fetchWithTimeout = (url, ms = 12_000) => {
+        const ctl = new AbortController();
+        const id = setTimeout(() => ctl.abort(), ms);
+        return fetch(url, { signal: ctl.signal, cache: 'no-store' })
+          .finally(() => clearTimeout(id));
+      };
+
+      const savePrefs = () => {
+        try{ localStorage.setItem(PREF_KEY, JSON.stringify({filters:state.filters, sort:state.sort, autoRefresh:state.autoRefresh})); }catch{}
+      };
+      const loadPrefs = () => {
+        try{
+          const p = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+          if (p.filters) Object.assign(state.filters, p.filters);
+          if (p.sort)    Object.assign(state.sort,    p.sort);
+          if (typeof p.autoRefresh === 'boolean') state.autoRefresh = p.autoRefresh;
+        }catch{}
+      };
+
+      // 秒/毫秒自适配
+      const parseListingTime = (v) => {
+        const n = Number(v);
+        if (!Number.isFinite(n) || n <= 0) return 0;
+        return n > 1e12 ? n : n * 1000;
+      };
+
+      // ---------- Rendering ----------
+      const loadingHtml = '<div class="loading">加载中…</div>';
+      const emptyHtml   = '<div class="loading muted">(空)</div>';
+
+      function buildColgroup(){
+        /* 固定列宽，确保“符号”对齐 */
+        return `
+          <colgroup>
+            <col style="width:56px" />    <!-- 图标 -->
+            <col style="width:140px" />   <!-- 符号 -->
+            <col style="width:120px" />   <!-- 涨跌% -->
+            <col style="width:140px" />   <!-- 价格 -->
+            <col style="width:160px" />   <!-- 24h 交易量 -->
+            <col style="width:160px" />   <!-- 市值 -->
+            <col style="width:160px" />   <!-- FDV -->
+            <col style="width:180px" />   <!-- Alpha 上线时间 -->
+            <col style="width:96px"  />   <!-- 状态 -->
+          </colgroup>`;
       }
 
-      /* ---------- 渲染函数 ---------- */
-      function rowTpl(arr, tag, showMcap){
-        return arr.map(a => `
+      function buildHeader(){
+        const cols = [
+          { label:'图标' },
+          { label:'符号', sortKey:'symbol' },
+          { label:'24h 涨跌%', sortKey:'change', thClass:'num' },
+          { label:'价格 (USD)', sortKey:'price', thClass:'num' },
+          { label:'24h 交易量 (USD)', sortKey:'vol24h', thClass:'num' },
+          { label:'流通市值 (USD)', sortKey:'marketCap', thClass:'num' },
+          { label:'FDV (USD)', sortKey:'fdv', thClass:'num' },
+          { label:'Alpha 上线时间', sortKey:'alphaTime' },
+          { label:'' }
+        ];
+        const cur = state.sort;
+        return `
+          <thead><tr>
+            ${cols.map(c => {
+              if (!c.sortKey) return `<th class="${c.thClass||''}">${c.label}</th>`;
+              const active = cur.key === c.sortKey;
+              const arrow = active ? (cur.dir === 'asc' ? '▲' : '▼') : '';
+              return `<th class="sortable ${c.thClass||''}" data-sort-key="${c.sortKey}" aria-sort="${active ? (cur.dir==='asc'?'ascending':'descending') : 'none'}">
+                        <span>${c.label}</span><span class="arrow">${arrow}</span>
+                      </th>`;
+            }).join('')}
+          </tr></thead>`;
+      }
+
+      function rowTpl(a){
+        const img = a.iconUrl ? `<img src="${escapeHtml(a.iconUrl)}" alt="" class="ico" onerror="this.style.display='none'">` : '';
+        return `
           <tr>
-            <td><img src="${a.iconUrl}" alt="" class="ico" onerror="this.style.display='none'"></td>
-            <td>${a.name}</td>
-            <td>${a.symbol}</td>
-            <td style="color:${color(a.percentChange24h)}">${(+a.percentChange24h).toFixed(2)}%</td>
-            <td>${(+a.price).toFixed(6)}</td>
-            ${showMcap ? `<td>${fmt(a.marketCap)}</td>` : ''}
-            <td><span class="badge ${tag==='现货已上'?'spot':'perp'}">${tag}</span></td>
-          </tr>`).join('');
+            <td>${img}</td>
+            <td class="mono">${escapeHtml((a.symbol || '').toUpperCase())}</td>
+            <td class="num mono ${colorClass(a.percentChange24h)}">${fmtPercent(a.percentChange24h)}</td>
+            <td class="num mono">$${fmtPrice(a.price)}</td>
+            <td class="num mono">${fmtUSD(a.vol24h)}</td>
+            <td class="num mono">${fmtUSD(a.marketCap)}</td>
+            <td class="num mono">${fmtUSD(a.fdv)}</td>
+            <td>${fmtDate(a.alphaTime)}</td>
+            <td><span class="badge perp">合约已上</span></td>
+          </tr>`;
       }
 
-      function renderSpot(){
-        spotDiv.innerHTML = spotList.length ? `
-          <table>
-            <thead><tr>
-              <th>图标</th><th>名称</th><th>符号</th><th>24h 涨跌%</th><th>价格 (USD)</th><th></th>
-            </tr></thead>
-            <tbody>${rowTpl(spotList,'现货已上',false)}</tbody>
-          </table>` : loading;
+      function applySearch(arr){
+        const q = state.filters.q.trim().toLowerCase();
+        if (!q) return arr;
+        return arr.filter(a =>
+          (a.name && a.name.toLowerCase().includes(q)) ||   // 仍允许按名称搜
+          (a.symbol && a.symbol.toLowerCase().includes(q))
+        );
+      }
+
+      function applySort(arr){
+        const { key, dir } = state.sort;
+        const sgn = dir === 'asc' ? 1 : -1;
+        const cmpStr = (a,b) => a<b ? -1 : a>b ? 1 : 0;
+
+        return arr.slice().sort((a,b) => {
+          let va, vb;
+          switch(key){
+            case 'symbol':    va = (a.symbol||'').toUpperCase(); vb=(b.symbol||'').toUpperCase(); return sgn * cmpStr(va,vb);
+            case 'change':    va = toNum(a.percentChange24h);    vb = toNum(b.percentChange24h);  break;
+            case 'price':     va = toNum(a.price);               vb = toNum(b.price);             break;
+            case 'vol24h':    va = toNum(a.vol24h);              vb = toNum(b.vol24h);            break;
+            case 'marketCap': va = toNum(a.marketCap);           vb = toNum(b.marketCap);         break;
+            case 'fdv':       va = toNum(a.fdv);                 vb = toNum(b.fdv);               break;
+            case 'alphaTime': va = toNum(a.alphaTime);           vb = toNum(b.alphaTime);         break;
+            default:          va = 0;                            vb = 0;
+          }
+          return sgn * (va - vb);
+        });
+      }
+
+      function bindSort(tableEl){
+        tableEl.querySelectorAll('th.sortable').forEach(th => {
+          th.addEventListener('click', () => {
+            const key = th.getAttribute('data-sort-key');
+            if (state.sort.key === key) {
+              state.sort.dir = (state.sort.dir === 'asc') ? 'desc' : 'asc';
+            } else {
+              state.sort.key = key;
+              // 文本列默认升序，其它默认降序
+              state.sort.dir = (key === 'symbol') ? 'asc' : 'desc';
+            }
+            savePrefs();
+            renderPerp();
+          });
+        });
+      }
+
+      function updateHint(totalPerp, hidden, shown){
+        perpHint.textContent = `合约数：${totalPerp} ｜已隐藏：${hidden} ｜显示：${shown}`;
       }
 
       function renderPerp(){
-        let arr = perpList.slice();
-        if (hideDupCB.checked) arr = arr.filter(a => !spotSet.has(a.symbol.toUpperCase()));
-        arr.sort((a,b) => sortAsc ? (+a.marketCap - +b.marketCap) : (+b.marketCap - +a.marketCap));
+        let arr = state.perpList.slice();
+        const totalPerp = arr.length;
+        let hidden = 0;
 
-        perpDiv.innerHTML = arr.length ? `
+        if (state.filters.hideDup) {
+          const before = arr.length;
+          arr = arr.filter(a => !state.spotSet.has((a.symbol||'').toUpperCase()));
+          hidden = before - arr.length;
+        }
+
+        arr = applySort(applySearch(arr));
+
+        if (!arr.length){
+          perpDiv.innerHTML = state.loading ? loadingHtml : emptyHtml;
+          updateHint(totalPerp, hidden, 0);
+          return;
+        }
+
+        const html = `
           <table>
-            <thead><tr>
-              <th>图标</th><th>名称</th><th>符号</th><th>24h 涨跌%</th><th>价格 (USD)</th>
-              <th id="mcapHeader" class="sortable">流通市值 (USD) ${sortAsc?'▲':'▼'}</th><th></th>
-            </tr></thead>
-            <tbody>${rowTpl(arr,'合约已上',true)}</tbody>
-          </table>` : '<p class="loading">(空)</p>';
-
-        const hdr = document.getElementById('mcapHeader');
-        if (hdr) hdr.onclick = () => { sortAsc = !sortAsc; renderPerp(); };
+            ${buildColgroup()}
+            ${buildHeader()}
+            <tbody>${arr.map(rowTpl).join('')}</tbody>
+          </table>`;
+        perpDiv.innerHTML = html;
+        bindSort(perpDiv);
+        updateHint(totalPerp, hidden, arr.length);
       }
+
+      function setLoading(on){
+        state.loading = on;
+        if (on){
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = '刷新中…';
+          perpDiv.innerHTML = loadingHtml;
+        } else {
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = '立即刷新';
+        }
+      }
+      const setLastUpdated = () => lastUpdEl.textContent = '最后更新时间：' + nowStr();
+      function setError(msg){
+        const html = `<div class="error">${escapeHtml(msg)}</div>`;
+        perpDiv.innerHTML = html;
+        updateHint(0,0,0);
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = '立即刷新';
+      }
+
+      // ---------- Data loader ----------
+      async function loadData(){
+        if (state.loading) return; // 防重入
+        setLoading(true);
+        try{
+          const [alphaRes, futRes] = await Promise.all([
+            fetchWithTimeout(ALPHA_LIST_URL),
+            fetchWithTimeout(FUTURES_URL)
+          ]);
+
+          const alphaJson = await alphaRes.json();
+          const futJson   = await futRes.json();
+
+          if (!alphaJson || !Array.isArray(alphaJson.data)) throw new Error('Alpha 列表接口异常：data 为空');
+          if (!futJson || !Array.isArray(futJson.symbols)) throw new Error('Futures 接口异常：symbols 为空');
+
+          // 期货可交易对集合（USDT/USDC/BUSD）
+          const futSet = new Set(futJson.symbols.map(s => String(s.symbol).toUpperCase()));
+          const hasPerp = (sym) => {
+            const S = (sym||'').toUpperCase();
+            return futSet.has(S+'USDT') || futSet.has(S+'USDC') || futSet.has(S+'BUSD');
+          };
+
+          // 按 symbol 去重（保留市值更大的）
+          const bySym = new Map();
+          for (const t of alphaJson.data) {
+            const sym = (t.symbol || '').toUpperCase().trim();
+            if (!sym) continue;
+            const cur = bySym.get(sym);
+            if (!cur) bySym.set(sym, t);
+            else {
+              const m1 = toNum(t.marketCap), m2 = toNum(cur.marketCap);
+              bySym.set(sym, m1 >= m2 ? t : cur);
+            }
+          }
+
+          const all = Array.from(bySym.values()).map(t => ({
+            name: (t.name || '').trim(), // 仍用于搜索
+            symbol: (t.symbol || '').trim(),
+            iconUrl: (t.iconUrl || '').trim(),
+            percentChange24h: toNum(t.percentChange24h),
+            price: toNum(t.price),
+            vol24h: toNum(t.volume24h),
+            marketCap: toNum(t.marketCap),
+            fdv: toNum(t.fdv),
+            listingCex: isTrue(t.listingCex),
+            alphaTime: parseListingTime(t.listingTime)
+          }));
+
+          const spotList = all.filter(t => t.listingCex);
+          const perpList = all.filter(t => hasPerp(t.symbol));
+
+          state.spotList  = spotList;
+          state.perpList  = perpList;
+          state.spotSet   = new Set(spotList.map(t => (t.symbol||'').toUpperCase()));
+
+          renderPerp();
+          setLastUpdated();
+        } catch (e){
+          console.error(e);
+          setError('加载失败，请稍后重试。' + (e?.message ? `（${e.message}）` : ''));
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      // ---------- Events ----------
+      const debounce = (fn, ms=250) => { let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; };
+      function setAutoRefresh(on){
+        if (state.timer){ clearInterval(state.timer); state.timer = null; }
+        state.autoRefresh = !!on;
+        if (state.autoRefresh){
+          state.timer = setInterval(() => { if (!state.loading) loadData(); }, REFRESH_MS);
+        }
+        savePrefs();
+      }
+      function initFromPrefs(){
+        try{
+          const p = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+          if (p.filters) Object.assign(state.filters, p.filters);
+          if (p.sort)    Object.assign(state.sort,    p.sort);
+          if (typeof p.autoRefresh === 'boolean') state.autoRefresh = p.autoRefresh;
+        }catch{}
+        hideDupCB.checked  = !!state.filters.hideDup;
+        autoRefCB.checked  = !!state.autoRefresh;
+        searchInp.value    = state.filters.q || '';
+      }
+      hideDupCB.addEventListener('change', () => { state.filters.hideDup = hideDupCB.checked; savePrefs(); renderPerp(); });
+      autoRefCB.addEventListener('change', () => setAutoRefresh(autoRefCB.checked));
+      searchInp.addEventListener('input', debounce(() => { state.filters.q = searchInp.value || ''; savePrefs(); renderPerp(); }, 200));
+      refreshBtn.addEventListener('click', () => loadData());
+
+      // ---------- Start ----------
+      initFromPrefs();
+      setAutoRefresh(state.autoRefresh);
+      loadData();
+      window.addEventListener('beforeunload', () => { if (state.timer) clearInterval(state.timer); });
     })();
   </script>
 </body>
