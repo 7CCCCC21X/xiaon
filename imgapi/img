@@ -1,0 +1,41 @@
+export const config = { runtime: 'edge' };
+
+// 只允许代理 bnbstatic 图标，避免成为开放代理
+const ALLOWED_HOSTS = ['bin.bnbstatic.com', 'public.bnbstatic.com'];
+
+export default async function handler(req) {
+  const { searchParams } = new URL(req.url);
+  const raw = searchParams.get('url');
+  if (!raw) return new Response('Missing url', { status: 400 });
+
+  let u;
+  try { u = new URL(raw); } catch { return new Response('Bad url', { status: 400 }); }
+  if (!/^https?:$/.test(u.protocol)) return new Response('Bad protocol', { status: 400 });
+  if (!ALLOWED_HOSTS.some(h => u.hostname === h || u.hostname.endsWith('.' + h)))
+    return new Response('Host not allowed', { status: 400 });
+
+  const upstream = await fetch(u.href, {
+    // 加上 Referer/User-Agent 以通过反盗链校验
+    headers: {
+      'User-Agent': 'Mozilla/5.0',
+      'Referer': 'https://www.binance.com/',
+      'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8'
+    },
+  });
+
+  if (!upstream.ok) {
+    return new Response(`Upstream ${upstream.status}`, { status: upstream.status });
+  }
+
+  const type = upstream.headers.get('content-type') || 'image/png';
+  const buf = await upstream.arrayBuffer();
+
+  return new Response(buf, {
+    status: 200,
+    headers: {
+      'Content-Type': type,
+      // 浏览器与边缘缓存一天
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400'
+    }
+  });
+}
