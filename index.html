@@ -235,7 +235,14 @@
       }
 
       function rowTpl(a){
-        const img = a.iconUrl ? `<img src="${escapeHtml(a.iconUrl)}" alt="" class="ico" onerror="this.style.display='none'">` : '';
+        /* ✅ 改成带代理回退的 <img>（先直连，失败则走 /api/img） */
+        const img = a.iconUrl
+          ? `<img class="ico" alt="" referrerpolicy="no-referrer"
+                   data-src="${escapeHtml(a.iconUrl)}"
+                   src="${escapeHtml(a.iconUrl)}"
+                   onerror="if(!this.dataset.fallback){this.dataset.fallback=1;this.src='/api/img?url='+encodeURIComponent(this.dataset.src)}else{this.style.display='none'}">`
+          : '';
+
         return `
           <tr>
             <td>${img}</td>
